@@ -1,0 +1,12 @@
+{
+  "name": "babel6-plugin-remove-imports",
+  "version": "6.0.0",
+  "description": "Strips import declarations for configured modules from babel6 output",
+  "main": "index.js",
+  "keywords": [
+    "babel",
+    "babel-plugin"
+  ],
+  "author": "Chris Thoburn",
+  "license": "MIT"
+}
