@@ -1,13 +1,17 @@
-function removeImports() {
+"use strict";
+
+function PluginRemoveFilteredImports() {
   let importDeclarationsToRemove;
   let filteredImports;
+  let filteredImportNames;
 
   return {
     name: 'remove-filtered-imports',
     visitor: {
       Program: {
         enter: function(_, state) {
-          filteredImports = state.opts instanceof Array ? state.opts : (state.opts ? [state.opts] : []);
+          filteredImports = state.opts || {};
+          filteredImportNames = Object.keys(filteredImports);
           importDeclarationsToRemove = [];
         },
         exit: function() {
@@ -20,10 +24,37 @@ function removeImports() {
       },
 
       ImportDeclaration: function(path) {
-        const name = path.node.source.value;
+        let name = path.node.source.value;
 
-        if (filteredImports.indexOf(name) !== -1) {
-          importDeclarationsToRemove.push(path);
+        if (filteredImportNames.indexOf(name) !== -1) {
+          if (filteredImports[name] === true || filteredImports[name] === '*') {
+            importDeclarationsToRemove.push(path);
+          } else {
+            let removables = [];
+            let imports = path.node.specifiers;
+            const hasSpecifiers = imports.length > 0;
+
+            for (let i = 0; i < imports.length; i++) {
+              if (imports[i].type === 'ImportNamespaceSpecifier') {
+                continue;
+              }
+
+              let specifier = imports[i].imported;
+
+              if (filteredImports[name].indexOf(specifier.name) !== -1) {
+                removables.push(imports[i]);
+              }
+            }
+
+            if (hasSpecifiers && removables.length === imports.length) {
+              importDeclarationsToRemove.push(path);
+            } else {
+              for (let i = 0; i < removables.length; i++) {
+                let index = imports.indexOf(removables[i]);
+                imports.splice(index, 1);
+              }
+            }
+          }
         }
       }
 
@@ -31,8 +62,8 @@ function removeImports() {
   };
 }
 
-removeImports.baseDir = function() {
+PluginRemoveFilteredImports.baseDir = function() {
   return __dirname;
 };
 
-module.exports = removeImports;
+module.exports = PluginRemoveFilteredImports;
