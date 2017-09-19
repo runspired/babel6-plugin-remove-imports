@@ -10,8 +10,21 @@ function PluginRemoveFilteredImports() {
     visitor: {
       Program: {
         enter: function(_, state) {
-          filteredImports = state.opts || {};
-          filteredImportNames = Object.keys(filteredImports);
+          let opts = state.opts;
+
+          // support legacy options array
+          if (Array.isArray(opts)) {
+            filteredImportNames = opts;
+            filteredImports = {};
+
+            opts.forEach((key) => {
+              filteredImports[key] = '*';
+            });
+          } else {
+            filteredImports = opts || {};
+            filteredImportNames = Object.keys(filteredImports);
+          }
+
           importDeclarationsToRemove = [];
         },
         exit: function() {
